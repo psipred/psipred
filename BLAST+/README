@@ -1,0 +1,34 @@
+Running PSIPRED with BLAST+
+===========================
+
+NCBI are now encouraging users to switch over from the classic BLAST
+package to the new BLAST+ package. On the one hand this is a cleaner
+and nicer version of BLAST, but on the other hand, it omits some
+useful features. In particular, BLAST+ no longer offers the facility
+to extract more precise PSSM scores from checkpoint files in a
+"supported" way (previously we used the makemat utility to get this
+information).
+
+Unfortunate, BLAST+ saves PSSM data after scaling by 10 and rounding,
+which loses too much precision.
+
+One solution would be to patch BLAST+ to offer more precision on the
+PSSM file output. This is not a very convenient option - most users
+prefer to avoid building BLAST from source. Another solution would be
+to generate PSSM data from alignments, but this would entail
+generating and reading very large files and would be error prone.
+
+The compromise solution we are trialling is to extract PSSM information
+directly from the ASN.1 checkpoint files. This seems to work very well
+indeed - though the results are not exactly identical to those from
+classic BLAST makemat, as we have to recover the original internal scaling
+factor used by BLAST+ with a bit of a hack. The differences appear to
+be trivial, however.
+
+Eventually, we will probably switch over to this method as the preferred
+way of running PSIPRED, but for the time being the interface to BLAST+
+is considered experimental.
+
+If you wish to use PSIPRED with BLAST+, then use the runpsipredplus script
+here, rather than the normal runpsipred script. Please do let us know if
+you run into insurmountable problems using this script.

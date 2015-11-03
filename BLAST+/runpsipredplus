@@ -1,0 +1,77 @@
+#!/bin/tcsh
+
+# This is a simple script which will carry out all of the basic steps
+# required to make a PSIPRED V3 prediction using BLAST+. Note that it
+# assumes that the following programs are in the appropriate directories:
+# psiblast - PSIBLAST executable (from NCBI BLAST+)
+# psipred - PSIPRED V3 program
+# psipass2 - PSIPRED V3 program
+# chkparse - PSIPRED V3 program
+
+# NOTE: Experimental PSIPRED script with BLAST+ compatability (DTJ May 2010)
+
+# The name of the BLAST+ data bank
+set dbname = uniref90filt
+
+# Where the NCBI BLAST+ programs have been installed
+set ncbidir = /usr/local/bin
+
+# Where the PSIPRED V3 programs have been installed
+set execdir = ../bin
+
+# Where the PSIPRED V3 data files have been installed
+set datadir = ../data
+
+set basename = $1:r
+set rootname = $basename:t
+
+# Generate a "unique" temporary filename root
+set hostid = `hostid`
+set tmproot = psitmp$$$hostid
+
+\cp -f $1 $tmproot.fasta
+
+echo "Running PSI-BLAST with sequence" $1 "..."
+
+$ncbidir/psiblast -db $dbname -query $tmproot.fasta -inclusion_ethresh 0.001 -out_pssm $tmproot.chk -num_iterations 3 -num_alignments 0 >& $tmproot.blast
+
+if ($status != 0) then
+    tail $tmproot.blast
+    echo "FATAL: Error whilst running blastpgp - script terminated!"
+    exit $status
+endif
+
+echo "Predicting secondary structure..."
+
+$execdir/chkparse $tmproot.chk > $tmproot.mtx
+
+if ($status != 0) then
+    echo "FATAL: Error whilst running chkparse - script terminated!"
+    exit $status
+endif
+
+echo Pass1 ...
+
+$execdir/psipred $tmproot.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $rootname.ss
+
+if ($status != 0) then
+    echo "FATAL: Error whilst running psipred - script terminated!"
+    exit $status
+endif
+
+echo Pass2 ...
+
+$execdir/psipass2 $datadir/weights_p2.dat 1 1.0 1.0 $rootname.ss2 $rootname.ss > $rootname.horiz
+
+if ($status != 0) then
+    echo "FATAL: Error whilst running psipass2 - script terminated!"
+    exit $status
+endif
+
+# Remove temporary files
+
+echo Cleaning up ...
+\rm -f $tmproot.* error.log
+
+echo "Final output files:" $rootname.ss2 $rootname.horiz
+echo "Finished."
