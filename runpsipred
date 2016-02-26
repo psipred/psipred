@@ -1,12 +1,12 @@
 #!/bin/tcsh
 
 # This is a simple script which will carry out all of the basic steps
-# required to make a PSIPRED V2 prediction. Note that it assumes that the
+# required to make a PSIPRED prediction. Note that it assumes that the
 # following programs are in the appropriate directories:
 # blastpgp - PSIBLAST executable (from NCBI toolkit)
 # makemat - IMPALA utility (from NCBI toolkit)
-# psipred - PSIPRED V3 program
-# psipass2 - PSIPRED V3 program
+# psipred - PSIPRED V4 program
+# psipass2 - PSIPRED V4 program
 
 # NOTE: Script modified to be more cluster friendly (DTJ April 2008)
 
@@ -16,10 +16,10 @@ set dbname = uniref90filt
 # Where the NCBI programs have been installed
 set ncbidir = /usr/local/bin
 
-# Where the PSIPRED V2 programs have been installed
+# Where the PSIPRED V4 programs have been installed
 set execdir = ./bin
 
-# Where the PSIPRED V2 data files have been installed
+# Where the PSIPRED V4 data files have been installed
 set datadir = ./data
 
 set basename = $1:r

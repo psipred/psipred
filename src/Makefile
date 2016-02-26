@@ -1,5 +1,5 @@
 ######################################################################
-#	Makefile for PSIpred3                                        #
+#	Makefile for PSIpred4                                        #
 ######################################################################
 
 #### CC		Command to execute C compiler
@@ -11,13 +11,13 @@ CC		= cc
 CFLAGS		= -O
 LIBS		= -lm
 
-all:		psipred psipass2 chkparse seq2mtx pfilt
+all:		psipred psipass2 chkparse seq2mtx
 
 install:
-		/bin/cp psipred psipass2 chkparse seq2mtx pfilt ../bin
+		/bin/cp psipred psipass2 chkparse seq2mtx ../bin
 
 clean:
-		/bin/rm -f psipred psipass2 chkparse seq2mtx pfilt
+		/bin/rm -f psipred psipass2 chkparse seq2mtx
 
 psipred:	sspred_avpred.c ssdefs.h sspred_net.h
 		$(CC) $(CFLAGS) sspred_avpred.c $(LIBS) -o psipred
@@ -30,6 +30,3 @@ chkparse:	chkparse.c
 
 seq2mtx:	seq2mtx.c
 		$(CC) $(CFLAGS) seq2mtx.c $(LIBS) -o seq2mtx
-
-pfilt:		pfilt.c
-		$(CC) $(CFLAGS) pfilt.c $(LIBS) -o pfilt

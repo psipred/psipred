@@ -1,4 +1,4 @@
-/* PSIPRED 3.5 - Neural Network Prediction of Secondary Structure */
+/* PSIPRED 4.0 - Neural Network Prediction of Secondary Structure */
 
 /* Copyright (C) 2000 David T. Jones - Created : January 2000 */
 /* Original Neural Network code Copyright (C) 1990 David T. Jones */
@@ -19,8 +19,7 @@
 
 char           *wtfnm;
 
-int             nwtsum, fwt_to[TOTAL], lwt_to[TOTAL];
-float            activation[TOTAL], bias[TOTAL], *weight[TOTAL];
+float           activation[TOTAL], bias[TOTAL], *weight[TOTAL];
 
 float           profile[MAXSEQLEN][3];
 
@@ -42,34 +41,34 @@ void
     exit(1);
 }
 
-void
-                compute_output(void)
+void            compute_output()
 {
     int             i, j;
-    float            netinp, sum, omax;
+    float            netinp, *tp, omax, sum;
 
     for (i = NUM_IN; i < NUM_IN + NUM_HID; i++)
     {
 	netinp = bias[i];
-
-	for (j = fwt_to[i]; j < lwt_to[i]; j++)
-	    netinp += activation[j] * weight[i][j];
+	tp = weight[i];
+	for (j = 0; j < NUM_IN; j++)
+	    netinp += activation[j] * tp[j];
 
 	/* Trigger neuron */
-	activation[i] = logistic(netinp);
+	activation[i] = rectifier(netinp);
     }
 
     for (i = NUM_IN + NUM_HID; i < TOTAL; i++)
     {
 	netinp = bias[i];
-
-	for (j = fwt_to[i]; j < lwt_to[i]; j++)
-	    netinp += activation[j] * weight[i][j];
+	tp = weight[i];
+	for (j = NUM_IN; j < NUM_IN + NUM_HID; j++)
+	    netinp += activation[j] * tp[j];
 
 	/* Trigger neuron */
 	activation[i] = logistic(netinp);
     }
 }
+
 
 /*
  * load weights - load all link weights from a disk file
@@ -86,20 +85,18 @@ load_wts(char *fname)
 
     /* Load input units to hidden layer weights */
     for (i = NUM_IN; i < NUM_IN + NUM_HID; i++)
-	for (j = fwt_to[i]; j < lwt_to[i]; j++)
+	for (j = 0; j < NUM_IN; j++)
 	{
 	    fscanf(ifp, "%lf", &t);
 	    weight[i][j] = t;
-	    chksum += t*t;
 	}
 
     /* Load hidden layer to output units weights */
-    for (i = NUM_IN + NUM_HID; i < TOTAL; i++)
-	for (j = fwt_to[i]; j < lwt_to[i]; j++)
+    for (; i < TOTAL; i++)
+	for (j = NUM_IN; j < NUM_IN + NUM_HID; j++)
 	{
 	    fscanf(ifp, "%lf", &t);
 	    weight[i][j] = t;
-	    chksum += t*t;
 	}
 
     /* Load bias weights */
@@ -107,41 +104,19 @@ load_wts(char *fname)
     {
 	fscanf(ifp, "%lf", &t);
 	bias[j] = t;
-	chksum += t*t;
     }
 
-    /* Read expected checksum at end of file */
-    if (fscanf(ifp, "%lf", &t) != 1 || ferror(ifp))
-	fail("Weight file read error!");
-
     fclose(ifp);
-
-    if ((int)t != (int)(chksum+0.5))
-	fail("Corrupted weight file detected!");
 }
 
 void
 init(void)
 {
-    int             i, j;
+    int             i;
 
     for (i = NUM_IN; i < TOTAL; i++)
 	if (!(weight[i] = calloc(TOTAL - NUM_OUT, sizeof(float))))
 	  fail("init: Out of Memory!");
-
-    /* Connect input units to hidden layer */
-    for (i = NUM_IN; i < NUM_IN + NUM_HID; i++)
-    {
-	fwt_to[i] = 0;
-	lwt_to[i] = NUM_IN;
-    }
-
-    /* Connect hidden units to output layer */
-    for (i = NUM_IN + NUM_HID; i < TOTAL; i++)
-    {
-	fwt_to[i] = NUM_IN;
-	lwt_to[i] = NUM_IN + NUM_HID;
-    }
 }
 
 /* Convert AA letter to numeric code (0-20) */
@@ -170,7 +145,7 @@ void
     if (!ofp)
       fail("Cannot open output file!");
 
-    fputs("# PSIPRED VFORMAT (PSIPRED V3.5)\n\n", ofp);
+    fputs("# PSIPRED VFORMAT (PSIPRED V4.0)\n\n", ofp);
     
     if (niters < 1)
       niters = 1;
@@ -369,7 +344,7 @@ int main(int argc, char **argv)
 	profile[i][2] /= nprof;
     }
     
-    puts("# PSIPRED HFORMAT (PSIPRED V3.5)");
+    puts("# PSIPRED HFORMAT (PSIPRED V4.0)");
     predict(atoi(argv[2]), (float)atof(argv[3]), (float)atof(argv[4]), argv[5]);
     
     return 0;

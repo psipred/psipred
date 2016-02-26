@@ -1,9 +1,9 @@
 PSIPRED RELEASE NOTES
 =====================
 
-PSIPRED Version 3.5
+PSIPRED Version 4.0
 
-By David Jones, March 2014
+By David Jones, January 2016
 
 *** IMPORTANT *****************************************************
 NCBI are now trying to move users to the new BLAST+ package. Please
@@ -14,7 +14,7 @@ or rpm file you are downloading from NCBI has "+" in the filename,
 then you are downloading BLAST+ rather than BLAST.
 *******************************************************************
 
-Here are some very brief notes on using the PSIPRED V3 software.
+Here are some very brief notes on using the PSIPRED V4 software.
 
 PSIPRED is supplied in source code form - it must be compiled before
 it can be used. The code should compile on any ANSI C compiler e.g.
@@ -117,25 +117,11 @@ increases the bias towards beta strand prediction by approximately 30%.
 SEQUENCE DATA BANK
 ==================
 
-It is important to ensure than the sequence data bank used with PSI-BLAST
-has been filtered to remove low-complexity regions, transmembrane regions,
-and coiled-coil segments. If this is not done, then it is essential that
-the PSI-BLAST output for the target sequence is checked by-eye to ensure
-that no spurious sequences have been included in the PSI-BLAST alignment.
-A program called "pfilt" is included which will filter FASTA files before
-using the formatdb command to generate the encoded BLAST data bank files.
-
-For example:
-
-tcsh% pfilt nr.fasta > nrfilt
-
-tcsh% formatdb -t nrfilt -i nrfilt
-
-tcsh% cp nrfilt.p?? $BLASTDB
-
-(note that the above command assumes you have already set the BLASTDB
-environment variable to the directory where you usually keep your
-BLAST data banks)
+As of PSIPRED V4.0 onwards, we no longer believe it is necessary for the sequence
+data banks used with PSI-BLAST to be filtered to remove low-complexity regions,
+transmembrane regions, and coiled-coil segments. The search data bank can
+therefore be any large non-redundant protein sequence data bank, with
+UNIREF90 (http://www.uniprot.org/help/uniref) being the recommended one.
 
 
 
@@ -167,3 +153,5 @@ PSSM data directly from ASN.1 checkpoint files.
 have now been fixed (V3.21).
 
 7. Minor output bug loses singleton residue coil predictions fixed (V3.3)
+
+8. V4.0 released: new neural network architectures.

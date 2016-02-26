@@ -4,9 +4,9 @@
 # required to make a PSIPRED V3 prediction using BLAST+. Note that it
 # assumes that the following programs are in the appropriate directories:
 # psiblast - PSIBLAST executable (from NCBI BLAST+)
-# psipred - PSIPRED V3 program
-# psipass2 - PSIPRED V3 program
-# chkparse - PSIPRED V3 program
+# psipred - PSIPRED V4 program
+# psipass2 - PSIPRED V4 program
+# chkparse - PSIPRED V4 program
 
 # NOTE: Experimental PSIPRED script with BLAST+ compatability (DTJ May 2010)
 

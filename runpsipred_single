@@ -3,16 +3,16 @@
 # This is a simple script which will carry out all of the basic steps
 # required to make a PSIPRED prediction. Note that it assumes that the
 # following programs are available in the appropriate directories:
-# seq2mtx - PSIPRED V3 program
-# psipred - PSIPRED V3 program
-# psipass2 - PSIPRED V3 program
+# seq2mtx - PSIPRED V4 program
+# psipred - PSIPRED V4 program
+# psipass2 - PSIPRED V4 program
 
 # NOTE: Script modified to be more cluster friendly (DTJ April 2008)
 
-# Where the PSIPRED V3 programs have been installed
+# Where the PSIPRED V4 programs have been installed
 set execdir = ./bin
 
-# Where the PSIPRED V3 data files have been installed
+# Where the PSIPRED V4 data files have been installed
 set datadir = ./data
 
 set basename = $1:r

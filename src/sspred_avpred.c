@@ -1,4 +1,4 @@
-/* PSIPRED 3.5 - Neural Network Prediction of Secondary Structure */
+/* PSIPRED 4.0 - Neural Network Prediction of Secondary Structure */
 
 /* Copyright (C) 2000 David T. Jones - Created : January 2000 */
 /* Original Neural Network code Copyright (C) 1990 David T. Jones */
@@ -12,14 +12,30 @@
 #include <ctype.h>
 #include <time.h>
 
-#include "ssdefs.h"
 #include "sspred_net.h"
+
+#define MAXSEQLEN 10000
+
+enum
+{
+    FALSE, TRUE
+};
+
+#define SQR(x) ((x)*(x))
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MIN(x,y) ((x)<(y)?(x):(y))
+
+/* logistic 'squashing' function (+/- 1.0) */
+#define logistic(x) (1.0F / (1.0F + expf(-(x))))
+
+/* Rectifier function */
+#define rectifier(x) ((x) < 0.0F ? 0.0F : (x))
 
 void           *calloc(), *malloc();
 
 char           *wtfnm;
 
-int             nwtsum, fwt_to[TOTAL], lwt_to[TOTAL];
+int             nwtsum;
 float           activation[TOTAL], bias[TOTAL], *weight[TOTAL];
 
 int             profile[MAXSEQLEN][20];
@@ -44,77 +60,90 @@ err(char *s)
 }
 
 void
-fail(char *s)
+fail(char *msg)
 {
-    err(s);
-    exit(1);
+    fputs(msg, stderr);
+    fputc('\n', stderr);
+    
+    exit(-1);
 }
 
-void
-compute_output(void)
+/* Run feedforward network */
+void            compute_output()
 {
     int             i, j;
-    float           netinp;
+    float            netinp, *tp;
 
-    for (i = NUM_IN; i < TOTAL; i++)
+    for (i = NUM_IN; i < NUM_IN + NUM_CONV; i++)
     {
 	netinp = bias[i];
+	tp = weight[i];
+	for (j = 0; j < CWIDTH*IPERGRP; j++)
+	    netinp += activation[(i - NUM_IN)*IPERGRP/CDEPTH + j] * tp[(i - NUM_IN)*IPERGRP/CDEPTH + j];
 
-	for (j = fwt_to[i]; j < lwt_to[i]; j++)
-	    netinp += activation[j] * weight[i][j];
+	activation[i] = rectifier(netinp);
+    }
 
-	/* Trigger neuron */
+    for (i = NUM_IN + NUM_CONV; i < NUM_IN + NUM_CONV + NUM_HID; i++)
+    {
+	netinp = bias[i];
+	tp = weight[i];
+	for (j = NUM_IN; j < NUM_IN + NUM_CONV; j++)
+	    netinp += activation[j] * tp[j];
+
+	activation[i] = rectifier(netinp);
+    }
+
+    for (; i < TOTAL; i++)
+    {
+	netinp = bias[i];
+	tp = weight[i];
+	for (j = NUM_IN + NUM_CONV; j < NUM_IN + NUM_CONV + NUM_HID; j++)
+	    netinp += activation[j] * tp[j];
+
 	activation[i] = logistic(netinp);
     }
 }
 
-/*
- * load weights - load all link weights from a disk file
- */
+/* Load weights - load all connection weights from a disk file */
 void
 load_wts(char *fname)
 {
     int             i, j;
-    double          t, chksum = 0.0;
+    double          t;
     FILE           *ifp;
 
     if (!(ifp = fopen(fname, "r")))
-	fail("Cannot open weight file!\n");
+	fail("Cannot open weights file!");
 
-    /* Load input units to hidden layer weights */
-    for (i = NUM_IN; i < NUM_IN + NUM_HID; i++)
-	for (j = fwt_to[i]; j < lwt_to[i]; j++)
+    for (i = NUM_IN; i < NUM_IN + NUM_CONV; i++)
+	for (j = 0; j < CWIDTH*IPERGRP; j++)
+	{
+	    fscanf(ifp, "%lf", &t);
+	    weight[i][(i - NUM_IN)*IPERGRP/CDEPTH + j] = t;
+	}
+
+    for (i = NUM_IN + NUM_CONV; i < NUM_IN + NUM_CONV + NUM_HID; i++)
+	for (j = NUM_IN; j < NUM_IN + NUM_CONV; j++)
 	{
 	    fscanf(ifp, "%lf", &t);
 	    weight[i][j] = t;
-	    chksum += t*t;
 	}
 
-    /* Load hidden layer to output units weights */
-    for (i = NUM_IN + NUM_HID; i < TOTAL; i++)
-	for (j = fwt_to[i]; j < lwt_to[i]; j++)
+    for (; i < TOTAL; i++)
+	for (j = NUM_IN + NUM_CONV; j < NUM_IN + NUM_CONV + NUM_HID; j++)
 	{
 	    fscanf(ifp, "%lf", &t);
 	    weight[i][j] = t;
-	    chksum += t*t;
 	}
 
-    /* Load bias weights */
     for (j = NUM_IN; j < TOTAL; j++)
     {
 	fscanf(ifp, "%lf", &t);
 	bias[j] = t;
-	chksum += t*t;
     }
 
-    /* Read expected checksum at end of file */
-    if (fscanf(ifp, "%lf", &t) != 1 || ferror(ifp))
-	fail("Weight file read error!");
-
     fclose(ifp);
-
-    if ((int)t != (int)(chksum+0.5))
-	fail("Corrupted weight file detected!");
 }
 
 /* Initialize network */
@@ -125,21 +154,7 @@ init(void)
 
     for (i = NUM_IN; i < TOTAL; i++)
 	if (!(weight[i] = calloc(TOTAL - NUM_OUT, sizeof(float))))
-	  fail("init: Out of Memory!");
-
-    /* Connect input units to hidden layer */
-    for (i = NUM_IN; i < NUM_IN + NUM_HID; i++)
-    {
-	fwt_to[i] = 0;
-	lwt_to[i] = NUM_IN;
-    }
-
-    /* Connect hidden units to output layer */
-    for (i = NUM_IN + NUM_HID; i < TOTAL; i++)
-    {
-	fwt_to[i] = NUM_IN;
-	lwt_to[i] = NUM_IN + NUM_HID;
-    }
+	    fail("init: Out of Memory!");
 }
 
 /* Convert AA letter to numeric code (0-20) */
@@ -207,12 +222,12 @@ predict(int argc, char **argv)
 	avout[winpos][0] /= confsum[winpos];
 	avout[winpos][1] /= confsum[winpos];
 	avout[winpos][2] /= confsum[winpos];
-	if (avout[winpos][0] >= MAX(avout[winpos][1], avout[winpos][2]))
-	    predsst[winpos] = 'C';
-	else if (avout[winpos][2] >= MAX(avout[winpos][0], avout[winpos][1]))
+	if (avout[winpos][1] > MAX(avout[winpos][0], avout[winpos][2]))
+	    predsst[winpos] = 'H';
+	else if (avout[winpos][2] > MAX(avout[winpos][0], avout[winpos][1]))
 	    predsst[winpos] = 'E';
 	else
-	    predsst[winpos] = 'H';
+	    predsst[winpos] = 'C';
     }
     
     for (winpos = 0; winpos < seqlen; winpos++)
