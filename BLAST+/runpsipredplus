@@ -33,7 +33,7 @@ set tmproot = psitmp$$$hostid
 
 echo "Running PSI-BLAST with sequence" $1 "..."
 
-$ncbidir/psiblast -db $dbname -query $tmproot.fasta -inclusion_ethresh 0.001 -out_pssm $tmproot.chk -num_iterations 3 -num_alignments 0 >& $tmproot.blast
+$ncbidir/psiblast -db $dbname -query $tmproot.fasta -inclusion_ethresh 0.001 -num_descriptions 5000 -out_pssm $tmproot.chk -num_iterations 3 -num_alignments 0 >& $tmproot.blast
 
 if ($status != 0) then
     tail $tmproot.blast
