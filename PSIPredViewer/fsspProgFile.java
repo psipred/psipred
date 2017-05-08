@@ -1,4 +1,4 @@
-// Processed by NMI's Java Code Viewer 4.8.2 © 1997-2000 B. Lemaire
+// Processed by NMI's Java Code Viewer 4.8.2 1997-2000 B. Lemaire
 // Website: http://njcv.htmlplanet.com	E-mail: info@njcv.htmlplanet.com
 // Copy registered to Evaluation Copy
 // Source File Name:   fsspProgFile.java

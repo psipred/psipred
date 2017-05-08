@@ -1,4 +1,4 @@
-// Processed by NMI's Java Code Viewer 4.8.2 © 1997-2000 B. Lemaire
+// Processed by NMI's Java Code Viewer 4.8.2 1997-2000 B. Lemaire
 // Website: http://njcv.htmlplanet.com	E-mail: info@njcv.htmlplanet.com
 // Copy registered to Evaluation Copy
 // Source File Name:   fsspCanvas2.java
@@ -38,9 +38,9 @@ public class fsspCanvas2 {
     }
 
     public boolean print(PSGraphics g, int pageNum) {
-       	
+
 		g.setFontNameSize("Monospaced", 12);
-        
+
 		/*Graphics2D g2 = (Graphics2D) g;
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,   // Anti-alias!
 			    RenderingHints.VALUE_ANTIALIAS_ON);
@@ -144,7 +144,7 @@ public class fsspCanvas2 {
                 g.fillPolygon(xValues, yValues, 4);
                 g.setColor(Color.black);
                 g.drawPolygon(xValues, yValues, 4);
-				
+
             }
         }
 
@@ -160,7 +160,7 @@ public class fsspCanvas2 {
 		Color myYellow = new Color (255, 255, 136);
 		Color myRed = new Color (255, 136, 136);
 		Color myPink = new Color (255, 200, 200);
-		
+
         for(h = 0; h < data.getHstart().size(); h++) {
             int x1 = ((Integer)data.getHstart().elementAt(h)).intValue();
             int x2 = ((Integer)data.getHfin().elementAt(h)).intValue();
@@ -367,17 +367,17 @@ public class fsspCanvas2 {
     }
 
     public void drawLegend(PSGraphics g, int x, int y) {
-	
+
 		Color myPurple = new Color (255, 136, 255);
     	Color myYellow = new Color (255, 255, 136);
     	Color myRed = new Color (255, 136, 136);
     	Color myPink = new Color (255, 200, 200);
-    	
+
 		g.setFontNameSize("Monospaced", 10);
         g.setColor(Color.black);
         g.drawString("Legend:", -30, y - charHeight);
         g.drawRect(-40, y - 2 * charHeight, (int)(53F * charWidth), 7 * charHeight + charHeight2);
-        
+
 		//Draw helix example
 		g.setColor(myPurple);
         g.fillRect(-30, y, (int)(5F * charWidth), charHeight);
@@ -392,7 +392,7 @@ public class fsspCanvas2 {
         g.drawOval(-charWidth2-30, y, (int)charWidth, charHeight);
         g.setColor(Color.black);
         g.drawString(" = helix", (int)(6F * charWidth)-30, y + charHeight);
-        
+
 		//draw strand example
 		int xValues[] = {
             -30, (int)(4F * charWidth)-30, (int)(4F * charWidth)-30, (int)(5F * charWidth)-30, (int)(4F * charWidth)-30, (int)(4F * charWidth)-30, 0-30, 0-30
@@ -406,17 +406,17 @@ public class fsspCanvas2 {
         g.drawPolygon(xValues, yValues, 8);
         g.setColor(Color.black);
         g.drawString(" = strand ", (int)(6F * charWidth)-30, y + 3 * charHeight);
-        
+
 		//draw coil
 		g.setColor(Color.black);
         g.drawLine(-30, y + charHeight2 + 4 * charHeight, (int)(5F * charWidth)-30, y + charHeight2 + 4 * charHeight);
         g.drawString(" = coil ", (int)(6F * charWidth)-30, y + 5 * charHeight);
-        
-		
+
+
 		for(int column = 0; column < 5; column++) {
             int position = (int)((float)(22 + column) * charWidth + (float)charWidth4) -30;
             int x1Values[] = {
-                position, position + charWidth2, position + charWidth2, position 
+                position, position + charWidth2, position + charWidth2, position
             };
             int y1Values[] = {
                 y + charHeight, y + charHeight, y + ((8 - 2 * column) * charHeight) / 9, y + ((8 - 2 * column) * charHeight) / 9
@@ -424,7 +424,7 @@ public class fsspCanvas2 {
 			float scaled_colour = 255-((float)63.75 * (float)column);
 			//System.out.println("LEGEND VALUES: " + position + " " + column + " " + charHeight + " " + y);
 			Color myBlue = new Color ((int)scaled_colour,(int)scaled_colour, 255);
-                
+
             g.setColor(myBlue);
             g.fillPolygon(x1Values, y1Values, 4);
             g.setColor(Color.black);

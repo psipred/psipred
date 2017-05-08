@@ -1,4 +1,4 @@
-// Processed by NMI's Java Code Viewer 4.8.2 © 1997-2000 B. Lemaire
+// Processed by NMI's Java Code Viewer 4.8.2 1997-2000 B. Lemaire
 // Website: http://njcv.htmlplanet.com	E-mail: info@njcv.htmlplanet.com
 // Copy registered to Evaluation Copy
 // Source File Name:   psipredReader.java
@@ -18,9 +18,9 @@ public class psipredReader {
         Vector vect5 = new Vector();
         String strNoOfLine;
 
-	//handle new file format 10/11/03
-	strNoOfLine = in.readLine();
-	strNoOfLine = in.readLine();
+	      //handle new file format 10/11/03
+	      strNoOfLine = in.readLine();
+	      strNoOfLine = in.readLine();
 
         while((strNoOfLine = in.readLine()) != null)  {
             i++;

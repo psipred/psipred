@@ -11,10 +11,12 @@
 # NOTE: Script modified to be more cluster friendly (DTJ April 2008)
 
 # The name of the BLAST data bank
-set dbname = uniref90filt
+set dbname = /scratch1/NOT_BACKED_UP/dbuchan/uniref/uniref90.fasta
 
 # Where the NCBI programs have been installed
-set ncbidir = /usr/local/bin
+# NOTE: ensure you omit any trailing / from this setting or some terminals
+#       may seg fault
+set ncbidir = /scratch0/NOT_BACKED_UP/dbuchan/Applications/blast-2.2.26/bin
 
 # Where the PSIPRED V4 programs have been installed
 set execdir = ./bin

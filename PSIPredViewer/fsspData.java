@@ -1,4 +1,4 @@
-// Processed by NMI's Java Code Viewer 4.8.2 © 1997-2000 B. Lemaire
+// Processed by NMI's Java Code Viewer 4.8.2 1997-2000 B. Lemaire
 // Website: http://njcv.htmlplanet.com	E-mail: info@njcv.htmlplanet.com
 // Copy registered to Evaluation Copy
 // Source File Name:   fsspData.java
@@ -41,7 +41,7 @@ public class fsspData {
         vConf = Conf;
     }
 
-    public void setVectors(Vector Hposstart, Vector Hposfinish, Vector Bposstart, Vector Bposfinish, Vector Tposstart, Vector Tposfinish, Vector Nposstart, 
+    public void setVectors(Vector Hposstart, Vector Hposfinish, Vector Bposstart, Vector Bposfinish, Vector Tposstart, Vector Tposfinish, Vector Nposstart,
             Vector Nposfinish, Vector Cysastart, Vector Cysafinish, int h1, int b1, int t1, int l1) {
         vHstart = Hposstart;
         vHfin = Hposfinish;
