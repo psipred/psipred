@@ -1,0 +1,6 @@
+Experimental FAST psipred
+
+This directory contains a script that uses hhblits to find sequence relatived
+instead of PSIBLAST. We then use legacy BLAST to build the PSSM psipred needs
+
+This version is running on the psipred_beta web server

@@ -11,10 +11,10 @@
 # NOTE: Experimental PSIPRED script with BLAST+ compatability (DTJ May 2010)
 
 # The name of the BLAST+ data bank
-set dbname = uniref90filt
+set dbname = /scratch1/NOT_BACKED_UP/dbuchan/uniref/uniref90.fasta
 
 # Where the NCBI BLAST+ programs have been installed
-set ncbidir = /usr/local/bin
+set ncbidir = /scratch0/NOT_BACKED_UP/dbuchan/Applications/ncbi-blast-2.2.31+/bin/
 
 # Where the PSIPRED V3 programs have been installed
 set execdir = ../bin
@@ -71,7 +71,7 @@ endif
 # Remove temporary files
 
 echo Cleaning up ...
-\rm -f $tmproot.* error.log
+#\rm -f $tmproot.* error.log
 
 echo "Final output files:" $rootname.ss2 $rootname.horiz
 echo "Finished."

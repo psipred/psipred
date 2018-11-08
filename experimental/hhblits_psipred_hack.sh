@@ -1,7 +1,8 @@
+
 #!/bin/tcsh
 
 # This is a simple script which will carry out all of the basic steps
-# required to make a PSIPRED prediction. Note that it assumes that the
+# required to make a PSIPRED V4 prediction. Note that it assumes that the
 # following programs are in the appropriate directories:
 # blastpgp - PSIBLAST executable (from NCBI toolkit)
 # makemat - IMPALA utility (from NCBI toolkit)
@@ -10,19 +11,17 @@
 
 # NOTE: Script modified to be more cluster friendly (DTJ April 2008)
 
-# The name of the BLAST data bank
-set dbname = /scratch1/NOT_BACKED_UP/dbuchan/uniref/uniref90.fasta
+# The name of the HHBLITS data bank
+set dbname = /ssd1/hhblits/uniclust30_2017_10
 
 # Where the NCBI programs have been installed
-# NOTE: ensure you omit any trailing / from this setting or some terminals
-#       may seg fault
-set ncbidir = /scratch0/NOT_BACKED_UP/dbuchan/Applications/blast-2.2.26/bin
+set ncbidir = /usr/local/bin
 
 # Where the PSIPRED V4 programs have been installed
-set execdir = ./bin
+set execdir = /usr/local/bin
 
 # Where the PSIPRED V4 data files have been installed
-set datadir = ./data
+set datadir = /usr/local/share/psipred
 
 set basename = $1:r
 set rootname = $basename:t
@@ -31,16 +30,26 @@ set rootname = $basename:t
 set hostid = `hostid`
 set tmproot = psitmp$$$hostid
 
+setenv HHLIB /usr/local/lib/hhsuite/hh
+
 \cp -f $1 $tmproot.fasta
+
+echo "Running hhblits with sequence" $1 "..."
+
+$execdir/hhblits -d $dbname -i $tmproot.fasta -oa3m $tmproot.a3m -e 0.001 -n 3 -cpu 20 -diff inf -cov 10 -Z 100000 -B 100000 -maxfilt 100000 -maxmem 5 >& $tmproot.hhblits
+
+$HHLIB/scripts/reformat.pl a3m psi $tmproot.a3m $tmproot.psi
 
 echo "Running PSI-BLAST with sequence" $1 "..."
 
-$ncbidir/blastpgp -b 0 -j 3 -h 0.001 -v 5000 -d $dbname -i $tmproot.fasta -C $tmproot.chk >& $tmproot.blast
+$ncbidir/formatdb -i $tmproot.a3m -t $tmproot.a3m
+
+$ncbidir/blastpgp -a 12 -b 0 -j 2 -h 0.01 -d $tmproot.a3m -i $tmproot.fasta -B $tmproot.psi -C $tmproot.chk >& $tmproot.blast
 
 if ($status != 0) then
-    tail $tmproot.blast
+    cat $tmproot.blast
     echo "FATAL: Error whilst running blastpgp - script terminated!"
-    exit $status
+    exit 1
 endif
 
 echo "Predicting secondary structure..."
@@ -52,7 +61,7 @@ $ncbidir/makemat -P $tmproot
 
 if ($status != 0) then
     echo "FATAL: Error whilst running makemat - script terminated!"
-    exit $status
+    exit 1
 endif
 
 echo Pass1 ...
@@ -61,7 +70,7 @@ $execdir/psipred $tmproot.mtx $datadir/weights.dat $datadir/weights.dat2 $datadi
 
 if ($status != 0) then
     echo "FATAL: Error whilst running psipred - script terminated!"
-    exit $status
+    exit 1
 endif
 
 echo Pass2 ...
@@ -70,13 +79,22 @@ $execdir/psipass2 $datadir/weights_p2.dat 1 1.0 1.0 $rootname.ss2 $rootname.ss >
 
 if ($status != 0) then
     echo "FATAL: Error whilst running psipass2 - script terminated!"
-    exit $status
+    exit 1
+endif
+
+echo Solvation pass ...
+
+$execdir/solvpred $tmproot.mtx $datadir/weights_solv.dat > $rootname.solv
+
+if ($status != 0) then
+    echo "FATAL: Error whilst running solvpred - script terminated!"
+    exit 1
 endif
 
 # Remove temporary files
 
 echo Cleaning up ...
-#\rm -f $tmproot.* error.log
+\rm -f $tmproot.* error.log
 
-echo "Final output files:" $rootname.ss2 $rootname.horiz
+echo "Final output files:" $rootname.ss2 $rootname.horiz $rootname.solv
 echo "Finished."
