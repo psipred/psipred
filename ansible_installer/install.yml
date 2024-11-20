@@ -4,4 +4,4 @@
     - blast
     - psipred
   vars_files:
-   - paths.yaml
+   - ./config_vars.yml

@@ -43,8 +43,28 @@ to see if the path variables are set to wherever you have installed the
 program and data files. The default is to assume that the program is
 installed in the current directory - this is probably NOT what you want!
 
-INSTALLATION
-============
+GITHUB ANSIBLE INSTALLATION
+===========================
+
+First ensure that ansible is installed on your system, then clone the github
+repo
+
+% pip install ansible
+% git clone https://github.com/psipred/psipred.git
+% cd ~/psipred/ansible_installer
+
+Next edit the the config_vars.yml to reflect where you would like psipred and 
+its underlying data to be installed. You can choose a version of uniref but
+we recommend uniref90 for most accurate results.
+
+You can now run ansible as per
+
+% ansible-playbook -i hosts install.yml
+
+You can edit the hosts file to install psipred on one or more machines.
+
+MANUAL INSTALLATION
+===================
 
 Firstly compile the software:
 
@@ -64,6 +84,7 @@ NCBI toolkit, and also install appropriate sequence data banks.
 The NCBI toolkit can be obtained from URL ftp://ftp.ncbi.nih.gov
 
 PSI-BLAST executables can be obtained from ftp://ftp.ncbi.nih.gov/blast
+
 
 
 EXAMPLE USAGE

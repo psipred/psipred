@@ -1,0 +1,6 @@
+---
+
+app_location: ~/test_ansible/Applications
+data_location: ~/test_ansible/Data
+uniref_db: uniref90
+# uniref_db: uniref50

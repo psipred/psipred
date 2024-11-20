@@ -1,0 +1,35 @@
+---
+
+  - name: Check if psipred installed
+    stat: path=/{{ app_location }}/psipred
+    register: psipred_exist
+
+  - name : Check Out PSIPRED from GIT
+    when: psipred_exist.stat.exists == False
+    git:
+      repo: https://github.com/psipred/psipred.git
+      dest: "{{ app_location }}/psipred"
+      clone: yes
+      force: yes
+
+  - name: make psipred
+    shell: cd {{ app_location }}/psipred/src; make
+    when: psipred_exist.stat.exists == False
+
+  - name: install psipred
+    shell: cd {{ app_location }}/psipred/src; make install
+    when: psipred_exist.stat.exists == False
+
+  - name: update db location
+    when: psipred_exist.stat.exists == False
+    ansible.builtin.lineinfile:
+      path:  "{{ app_location }}/psipred/runpsipred"
+      regexp: "set dbname = "
+      line: "set dbname = {{ data_location }}/uniref/{{ uniref_db }}.fasta"
+
+  - name: update blast location
+    when: psipred_exist.stat.exists == False
+    ansible.builtin.lineinfile:
+      path:  "{{ app_location }}/psipred/runpsipred"
+      regexp: "set ncbidir = "
+      line: "set ncbidir = {{ app_location }}/blast-2.2.26/bin"
