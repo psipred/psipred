@@ -1,0 +1,13 @@
+---
+
+  - name: Check if psipred installed
+    stat: path=/{{ app_location }}/psipred
+    register: psipred_exist
+
+  - name : Check Out PSIPRED from GIT
+    when: psipred_exist.stat.exists == False
+    git:
+      repo: https://github.com/psipred/psipred.git
+      dest: "{{ app_location }}/psipred"
+      clone: yes
+      force: yes

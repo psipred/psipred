@@ -1,0 +1,55 @@
+---
+  - name: Check if we the psiblast is installed
+    stat: path={{ app_location }}/blast-2.2.26/bin/blastpgp
+    register: blastpgp_exist
+
+  - name: Download BLAST+ tarball
+    when: blastpgp_exist.stat.exists == False
+    get_url:
+      url: ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy.NOTSUPPORTED/2.2.26/blast-2.2.26-x64-linux.tar.gz
+      dest: "{{ app_location }}/"
+      timeout: 120
+    register: get_url_result
+
+  - name: unarchive blast
+    when: blastpgp_exist.stat.exists == False
+    unarchive:
+      src: "{{ app_location }}/blast-2.2.26-x64-linux.tar.gz"
+      dest: "{{ app_location }}/"
+      remote_src: yes
+
+  - name: remove blast+ tar.gz
+    when: blastpgp_exist.stat.exists == False
+    ansible.builtin.file:
+      state: absent
+      path: "{{ app_location }}/blast-2.2.26-x64-linux.tar.gz"
+
+  - name: Check if we have uniref90
+    stat:
+      path: "{{ data_location }}/uniref/uniref90.fasta.00.phr"
+      get_md5: false
+      get_checksum: false
+    register: uniref_exist
+
+  - name: Make uniref dir
+    file:
+      path: "{{ data_location }}/uniref/"
+      mode: uog+rw
+      state: directory
+    when: uniref_exist.stat.exists == False
+
+  - name: Download uniref90
+    when: uniref_exist.stat.exists == False
+    get_url:
+      url: ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref90.fasta.gz
+      dest: "{{ data_location }}/uniref/"
+      timeout: 120
+    register: get_url_result
+
+  - name: unzip uniref90
+    shell: cd {{ data_location }}/uniref; /bin/gunzip uniref90.fasta.gz
+    when: uniref_exist.stat.exists == False
+
+  - name: Run formatdb
+    shell: cd {{ data_location }}/uniref; /usr/local/bin/makeblastdb -in uniref90.fasta -dbtype prot
+    when: uniref_exist.stat.exists == False
