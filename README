@@ -43,8 +43,8 @@ to see if the path variables are set to wherever you have installed the
 program and data files. The default is to assume that the program is
 installed in the current directory - this is probably NOT what you want!
 
-GITHUB ANSIBLE INSTALLATION
-===========================
+INSTALLATION VIA GITHUB AND ANSIBLE
+===================================
 
 First ensure that ansible is installed on your system, then clone the github
 repo
