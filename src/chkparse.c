@@ -1,8 +1,23 @@
 /* chkparse - generate PSIPRED compatible mtx file from BLAST+ checkpoint file */
 
-/* V0.3 */
+/* V0.4 */
 
 /* Copyright (C) 2010 D.T. Jones */
+
+/*
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,11 +104,17 @@ void findtoken(char *buf, char *token, FILE *ifp)
 {
     for (;;)
     {
-	if (fscanf(ifp, "%s", buf) != 1)
+	if (fscanf(ifp, "%4095s", buf) != 1)
 	    fail("Cannot find token in checkpoint file!");
 	if (!token[0] || !strcmp(buf, token))
 	    break;
     }
+}
+
+/* Convert a hex digit (either case) to its value */
+int hexval(int ch)
+{
+    return isdigit(ch) ? ch - '0' : 10 + toupper(ch) - 'A';
 }
 
 /* Read hex sequence string */
@@ -116,20 +137,18 @@ int readhex(char *seq, FILE *ifp)
 	    continue;
 	if (!isxdigit(ch))
 	    fail("Bad sequence record in checkpoint file!");
-	if (ch >= 'A')
-	    aa = 16 * (10 + ch - 'A');
-	else
-	    aa = 16 * (ch - '0');
+	aa = 16 * hexval(ch);
 	ch = fgetc(ifp);
 	if (!isxdigit(ch))
 	    fail("Bad sequence record in checkpoint file!");
-	if (ch >= 'A')
-	    aa += 10 + ch - 'A';
-	else
-	    aa += ch - '0';
+	aa += hexval(ch);
 
-	if (nres > MAXSEQLEN)
-	    break;
+	/* ncbistdaa codes run from 0 to 27 */
+	if (aa > 27)
+	    fail("Bad residue code in checkpoint file!");
+
+	if (nres >= MAXSEQLEN)
+	    fail("Sequence too long in checkpoint file!");
 	
 	seq[nres++] = aa;
     }
@@ -141,7 +160,7 @@ int readhex(char *seq, FILE *ifp)
 int getpssm(char *dseq, FILE *ifp)
 {
     int i, j, len;
-    float pssmrow[28], val, base, power;
+    float val, base, power;
     char buf[4096];
     
     findtoken(buf, "", ifp);
@@ -199,7 +218,7 @@ int roundint(double x)
 
 int main(int argc, char **argv)
 {
-    int i, j, seqlen=0, nf;
+    int i, j, seqlen=0;
     char seq[MAXSEQLEN];
     double scale, x, y, sxx, sxy;
     FILE *ifp;
@@ -219,7 +238,7 @@ int main(int argc, char **argv)
     printf("%d\n", seqlen);
 
     for (i=0; i<seqlen; i++)
-      putchar(ncbicodes[seq[i]]);
+      putchar(ncbicodes[(int)seq[i]]);
 
     printf("\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n");
 
@@ -234,6 +253,9 @@ int main(int argc, char **argv)
 		sxy += (y*y) * x * y;
 	    }
 
+    if (sxx < EPSILON)
+	fail("No usable frequency ratios in checkpoint file!");
+
     scale = 100.0 * sxy / sxx;
 
     for (i=0; i<seqlen; i++)
@@ -241,10 +263,10 @@ int main(int argc, char **argv)
 	for (j=0; j<28; j++)
 	    if (ncbicodes[j] != '*')
 	    {
-		if (fratio[i][j] > EPSILON)
+		if (fratio[i][j] > EPSILON && aafreq[j] > EPSILON)
 		    printf("%d  ", roundint(scale * log(fratio[i][j] / aafreq[j])));
 		else
-		    printf("%d  ", 100*aamat[aanum(ncbicodes[seq[i]])][aanum(ncbicodes[j])]);
+		    printf("%d  ", 100*aamat[aanum(ncbicodes[(int)seq[i]])][aanum(ncbicodes[j])]);
 	    }
 	    else
 		printf("-32768  ");

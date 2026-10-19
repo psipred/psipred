@@ -8,7 +8,7 @@
 INCDIR		= .
 CC		= cc
 
-CFLAGS		= -O
+CFLAGS		= -O -Wall
 LIBS		= -lm
 
 all:		psipred psipass2 chkparse seq2mtx

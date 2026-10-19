@@ -1,7 +1,22 @@
-/* PSIPRED 4.0 - Neural Network Prediction of Secondary Structure */
+/* PSIPRED 4.1 - Neural Network Prediction of Secondary Structure */
 
 /* Copyright (C) 2000 David T. Jones - Created : January 2000 */
 /* Original Neural Network code Copyright (C) 1990 David T. Jones */
+
+/*
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 /* 2nd Level Prediction Module */
 
@@ -44,7 +59,7 @@ void
 void            compute_output()
 {
     int             i, j;
-    float            netinp, *tp, omax, sum;
+    float            netinp, *tp;
 
     for (i = NUM_IN; i < NUM_IN + NUM_HID; i++)
     {
@@ -70,6 +85,18 @@ void            compute_output()
 }
 
 
+/* Read one weight value, failing on a short or corrupt file */
+static double
+read_wt(FILE *ifp)
+{
+    double          t;
+
+    if (fscanf(ifp, "%lf", &t) != 1)
+	fail("Bad or truncated weight file!");
+
+    return t;
+}
+
 /*
  * load weights - load all link weights from a disk file
  */
@@ -77,34 +104,24 @@ void
 load_wts(char *fname)
 {
     int             i, j;
-    double          t, chksum = 0.0;
     FILE           *ifp;
 
     if (!(ifp = fopen(fname, "r")))
-	fail("Cannot open weight file!\n");
+	fail("Cannot open weight file!");
 
     /* Load input units to hidden layer weights */
     for (i = NUM_IN; i < NUM_IN + NUM_HID; i++)
 	for (j = 0; j < NUM_IN; j++)
-	{
-	    fscanf(ifp, "%lf", &t);
-	    weight[i][j] = t;
-	}
+	    weight[i][j] = read_wt(ifp);
 
     /* Load hidden layer to output units weights */
     for (; i < TOTAL; i++)
 	for (j = NUM_IN; j < NUM_IN + NUM_HID; j++)
-	{
-	    fscanf(ifp, "%lf", &t);
-	    weight[i][j] = t;
-	}
+	    weight[i][j] = read_wt(ifp);
 
     /* Load bias weights */
     for (j = NUM_IN; j < TOTAL; j++)
-    {
-	fscanf(ifp, "%lf", &t);
-	bias[j] = t;
-    }
+	bias[j] = read_wt(ifp);
 
     fclose(ifp);
 }
@@ -123,7 +140,7 @@ init(void)
 int
                 aanum(int ch)
 {
-    static int      aacvs[] =
+    static const int aacvs[] =
     {
 	999, 0, 20, 4, 3, 6, 13, 7, 8, 9, 20, 11, 10, 12, 2,
 	20, 14, 5, 1, 15, 16, 20, 19, 17, 20, 18, 20
@@ -136,19 +153,22 @@ int
 void
                 predict(int niters, float dca, float dcb, char *outname)
 {
-    int             aa, a, b, nb, i, j, k, n, winpos;
-    char            pred, predsst[MAXSEQLEN], lastpreds[MAXSEQLEN], *che = "CHE";
-    float           score_c[MAXSEQLEN], score_h[MAXSEQLEN], score_e[MAXSEQLEN], bestsc, score, conf[MAXSEQLEN], predq3, av_c, av_h, av_e;
+    int             aa, b, nb, i, j, winpos;
+    char            pred, predsst[MAXSEQLEN], lastpreds[MAXSEQLEN];
+    float           score_c[MAXSEQLEN], score_h[MAXSEQLEN], score_e[MAXSEQLEN], conf[MAXSEQLEN], av_c, av_h, av_e;
     FILE *ofp;
 
     ofp = fopen(outname, "w");
     if (!ofp)
       fail("Cannot open output file!");
 
-    fputs("# PSIPRED VFORMAT (PSIPRED V4.0)\n\n", ofp);
+    fputs("# PSIPRED VFORMAT (PSIPRED V4.1)\n\n", ofp);
     
     if (niters < 1)
       niters = 1;
+
+    /* lastpreds is copied from predsst before the first pass */
+    memset(predsst, 0, sizeof(predsst));
 
     do {
 	memcpy(lastpreds, predsst, seqlen);
@@ -222,7 +242,7 @@ void
     
     fclose(ofp);
     
-    nb = seqlen / 60 + 1;
+    nb = (seqlen + 59) / 60;
     j = 1;
     for (b = 0; b < nb; b++)
     {
@@ -279,15 +299,18 @@ void
 /* Read PSI AA frequency data */
 int             getss(FILE * lfil)
 {
-    int             i, j, naa;
+    int             naa;
     float pv[3];
-    char            buf[256], *p;
+    char            buf[256];
 
     naa = 0;
-    while (!feof(lfil))
+    while (fgets(buf, sizeof(buf), lfil))
     {
-	if (!fgets(buf, 256, lfil))
+	/* Data starts at column 12; shorter lines end the profile */
+	if (strlen(buf) < 12)
 	    break;
+	if (naa >= MAXSEQLEN)
+	    fail("Input sequence too long!");
 	seq[naa] = buf[5];
 	if (sscanf(buf + 11, "%f%f%f", &pv[0], &pv[1], &pv[2]) != 3)
 	    break;
@@ -308,10 +331,13 @@ int             getss(FILE * lfil)
 	naa++;
     }
     
-    nprof++;
-    
     if (!naa)
 	fail("Bad psipred pass1 file format!");
+
+    if (nprof && naa != seqlen)
+	fail("Pass1 input files have different sequence lengths!");
+
+    nprof++;
     
     return naa;
 }
@@ -344,7 +370,7 @@ int main(int argc, char **argv)
 	profile[i][2] /= nprof;
     }
     
-    puts("# PSIPRED HFORMAT (PSIPRED V4.0)");
+    puts("# PSIPRED HFORMAT (PSIPRED V4.1)");
     predict(atoi(argv[2]), (float)atof(argv[3]), (float)atof(argv[4]), argv[5]);
     
     return 0;

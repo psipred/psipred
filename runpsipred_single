@@ -15,9 +15,13 @@ set execdir = ./bin
 # Where the PSIPRED V4 data files have been installed
 set datadir = ./data
 
+if ($#argv != 1) then
+    echo "Usage: runpsipred_single fasta-file"
+    exit 1
+endif
+
 set basename = $1:r
 set rootname = $basename:t
-set outname = $basename.chk
 
 # Generate a "unique" temporary filename root
 set hostid = `hostid`
@@ -26,10 +30,11 @@ set tmproot = psitmp$$$hostid
 echo "Generating mtx file from sequence" $1 "..."
 
 $execdir/seq2mtx $1 > $tmproot.mtx
+set rc = $status
 
-if ($status != 0) then
-    echo "FATAL: Error whilst running makemat - script terminated!"
-    exit 1
+if ($rc != 0) then
+    echo "FATAL: Error whilst running seq2mtx - script terminated!"
+    exit $rc
 endif
 
 echo "Predicting secondary structure based on single sequence ..."
@@ -37,19 +42,21 @@ echo "Predicting secondary structure based on single sequence ..."
 echo Pass1 ...
 
 $execdir/psipred $tmproot.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $rootname.ss
+set rc = $status
 
-if ($status != 0) then
+if ($rc != 0) then
     echo "FATAL: Error whilst running psipred - script terminated!"
-    exit 1
+    exit $rc
 endif
 
 echo Pass2 ...
 
 $execdir/psipass2 $datadir/weights_p2.dat 1 1.0 1.0 $rootname.ss2 $rootname.ss > $rootname.horiz
+set rc = $status
 
-if ($status != 0) then
+if ($rc != 0) then
     echo "FATAL: Error whilst running psipass2 - script terminated!"
-    exit 1
+    exit $rc
 endif
 
 # Remove temporary files

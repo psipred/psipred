@@ -1,9 +1,9 @@
 PSIPRED RELEASE NOTES
 =====================
 
-PSIPRED Version 4.0
+PSIPRED Version 4.1
 
-By David Jones, January 2016
+By David Jones, October 2026
 
 *** IMPORTANT *****************************************************
 NCBI are now trying to move users to the new BLAST+ package. Please
@@ -176,3 +176,5 @@ have now been fixed (V3.21).
 7. Minor output bug loses singleton residue coil predictions fixed (V3.3)
 
 8. V4.0 released: new neural network architectures.
+
+9. V4.1 released: minor bug fixes and switch of license to GPL V3

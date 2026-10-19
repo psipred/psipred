@@ -1,7 +1,22 @@
-/* PSIPRED 4.0 - Neural Network Prediction of Secondary Structure */
+/* PSIPRED 4.1 - Neural Network Prediction of Secondary Structure */
 
 /* Copyright (C) 2000 David T. Jones - Created : January 2000 */
 /* Original Neural Network code Copyright (C) 1990 David T. Jones */
+
+/*
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 /* Average Prediction Module */
 
@@ -25,13 +40,11 @@ enum
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define MIN(x,y) ((x)<(y)?(x):(y))
 
-/* logistic 'squashing' function (+/- 1.0) */
+/* logistic 'squashing' function (output range 0.0 to 1.0) */
 #define logistic(x) (1.0F / (1.0F + expf(-(x))))
 
 /* Rectifier function */
 #define rectifier(x) ((x) < 0.0F ? 0.0F : (x))
-
-void           *calloc(), *malloc();
 
 char           *wtfnm;
 
@@ -107,12 +120,23 @@ void            compute_output()
     }
 }
 
+/* Read one weight value, failing on a short or corrupt file */
+static double
+read_wt(FILE *ifp)
+{
+    double          t;
+
+    if (fscanf(ifp, "%lf", &t) != 1)
+	fail("Bad or truncated weights file!");
+
+    return t;
+}
+
 /* Load weights - load all connection weights from a disk file */
 void
 load_wts(char *fname)
 {
     int             i, j;
-    double          t;
     FILE           *ifp;
 
     if (!(ifp = fopen(fname, "r")))
@@ -120,30 +144,18 @@ load_wts(char *fname)
 
     for (i = NUM_IN; i < NUM_IN + NUM_CONV; i++)
 	for (j = 0; j < CWIDTH*IPERGRP; j++)
-	{
-	    fscanf(ifp, "%lf", &t);
-	    weight[i][(i - NUM_IN)*IPERGRP/CDEPTH + j] = t;
-	}
+	    weight[i][(i - NUM_IN)*IPERGRP/CDEPTH + j] = read_wt(ifp);
 
     for (i = NUM_IN + NUM_CONV; i < NUM_IN + NUM_CONV + NUM_HID; i++)
 	for (j = NUM_IN; j < NUM_IN + NUM_CONV; j++)
-	{
-	    fscanf(ifp, "%lf", &t);
-	    weight[i][j] = t;
-	}
+	    weight[i][j] = read_wt(ifp);
 
     for (; i < TOTAL; i++)
 	for (j = NUM_IN + NUM_CONV; j < NUM_IN + NUM_CONV + NUM_HID; j++)
-	{
-	    fscanf(ifp, "%lf", &t);
-	    weight[i][j] = t;
-	}
+	    weight[i][j] = read_wt(ifp);
 
     for (j = NUM_IN; j < TOTAL; j++)
-    {
-	fscanf(ifp, "%lf", &t);
-	bias[j] = t;
-    }
+	bias[j] = read_wt(ifp);
 
     fclose(ifp);
 }
@@ -152,7 +164,7 @@ load_wts(char *fname)
 void
 init(void)
 {
-    int             i, j;
+    int             i;
 
     for (i = NUM_IN; i < TOTAL; i++)
 	if (!(weight[i] = calloc(TOTAL - NUM_OUT, sizeof(float))))
@@ -161,8 +173,7 @@ init(void)
 
 /* Convert AA letter to numeric code (0-20) */
 int
-aanum(ch)
-    int             ch;
+aanum(int ch)
 {
     static const int      aacvs[] =
     {
@@ -177,8 +188,8 @@ aanum(ch)
 void
 predict(int argc, char **argv)
 {
-    int             aa, i, j, k, n, winpos,ws;
-    char fname[80], predsst[MAXSEQLEN];
+    int             aa, j, winpos, ws;
+    char            predsst[MAXSEQLEN];
     float           avout[MAXSEQLEN][3], conf, confsum[MAXSEQLEN];
 
     for (winpos = 0; winpos < seqlen; winpos++)
@@ -239,50 +250,55 @@ predict(int argc, char **argv)
 /* Read PSI AA frequency data */
 int             getmtx(FILE *lfil)
 {
-    int             aa, i, j, naa;
+    int             j, naa;
     
     if (fscanf(lfil, "%d", &naa) != 1)
 	fail("Bad mtx file - no sequence length!");
     
-    if (naa > MAXSEQLEN)
+    if (naa >= MAXSEQLEN)
 	fail("Input sequence too long!");
+
+    if (naa < 1)
+	fail("Bad mtx file - bad sequence length!");
     
-    if (fscanf(lfil, "%s", seq) != 1)
+    /* Field width must be MAXSEQLEN-1 to leave room for the terminator */
+    if (fscanf(lfil, "%9999s", seq) != 1)
 	fail("Bad mtx file - no sequence!");
+
+    if ((int)strlen(seq) != naa)
+	fail("Bad mtx file - sequence length does not match header!");
     
-    while (!feof(lfil))
+    while (fgets(buf, sizeof(buf), lfil))
     {
-	if (!fgets(buf, sizeof(buf), lfil))
-	    fail("Bad mtx file!");
 	if (!strncmp(buf, "-32768 ", 7))
 	{
 	    for (j=0; j<naa; j++)
 	    {
 		if (sscanf(buf, "%*d%d%*d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%*d%d", &profile[j][ALA],  &profile[j][CYS], &profile[j][ASP],  &profile[j][GLU],  &profile[j][PHE],  &profile[j][GLY],  &profile[j][HIS],  &profile[j][ILE],  &profile[j][LYS],  &profile[j][LEU],  &profile[j][MET],  &profile[j][ASN],  &profile[j][PRO],  &profile[j][GLN],  &profile[j][ARG],  &profile[j][SER],  &profile[j][THR],  &profile[j][VAL],  &profile[j][TRP],  &profile[j][TYR]) != 20)
 		    fail("Bad mtx format!");
-		aa = aanum(seq[j]);
-		if (aa < 20)
-		    profile[j][aa] += 0000;
-		if (!fgets(buf, sizeof(buf), lfil))
-		    break;
+		if (j < naa - 1 && !fgets(buf, sizeof(buf), lfil))
+		    fail("Bad mtx file - profile is truncated!");
 	    }
+
+	    /* Anything after the profile (e.g. blank lines) is ignored */
+	    return naa;
 	}
     }
     
-    return naa;
+    fail("Bad mtx file - no profile found!");
+    return 0;
 }
 
+int
 main(int argc, char **argv)
 {
-    int             i, niters;
     FILE *ifp;
     
-    /* malloc_debug(3); */
-    if (argc < 2)
+    if (argc < 3)
 	fail("usage : psipred mtx-file weight-file1 ... weight-filen");
     ifp = fopen(argv[1], "r");
     if (!ifp)
-	exit(1);
+	fail("Cannot open mtx file!");
     seqlen = getmtx(ifp);
     fclose(ifp);
     

@@ -1,7 +1,7 @@
 #!/bin/tcsh
 
 # This is a simple script which will carry out all of the basic steps
-# required to make a PSIPRED V3 prediction using BLAST+. Note that it
+# required to make a PSIPRED V4 prediction using BLAST+. Note that it
 # assumes that the following programs are in the appropriate directories:
 # psiblast - PSIBLAST executable (from NCBI BLAST+)
 # psipred - PSIPRED V4 program
@@ -14,13 +14,18 @@
 set dbname = /scratch1/NOT_BACKED_UP/dbuchan/uniref/uniref90.fasta
 
 # Where the NCBI BLAST+ programs have been installed
-set ncbidir = /scratch0/NOT_BACKED_UP/dbuchan/Applications/ncbi-blast-2.2.31+/bin/
+set ncbidir = /scratch0/NOT_BACKED_UP/dbuchan/Applications/ncbi-blast-2.2.31+/bin
 
-# Where the PSIPRED V3 programs have been installed
+# Where the PSIPRED V4 programs have been installed
 set execdir = ../bin
 
-# Where the PSIPRED V3 data files have been installed
+# Where the PSIPRED V4 data files have been installed
 set datadir = ../data
+
+if ($#argv != 1) then
+    echo "Usage: runpsipredplus fasta-file"
+    exit 1
+endif
 
 set basename = $1:r
 set rootname = $basename:t
@@ -34,38 +39,42 @@ set tmproot = psitmp$$$hostid
 echo "Running PSI-BLAST with sequence" $1 "..."
 
 $ncbidir/psiblast -db $dbname -query $tmproot.fasta -inclusion_ethresh 0.001 -num_descriptions 5000 -out_pssm $tmproot.chk -num_iterations 3 -num_alignments 0 >& $tmproot.blast
+set rc = $status
 
-if ($status != 0) then
+if ($rc != 0) then
     tail $tmproot.blast
-    echo "FATAL: Error whilst running blastpgp - script terminated!"
-    exit $status
+    echo "FATAL: Error whilst running psiblast - script terminated!"
+    exit $rc
 endif
 
 echo "Predicting secondary structure..."
 
 $execdir/chkparse $tmproot.chk > $tmproot.mtx
+set rc = $status
 
-if ($status != 0) then
+if ($rc != 0) then
     echo "FATAL: Error whilst running chkparse - script terminated!"
-    exit $status
+    exit $rc
 endif
 
 echo Pass1 ...
 
 $execdir/psipred $tmproot.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $rootname.ss
+set rc = $status
 
-if ($status != 0) then
+if ($rc != 0) then
     echo "FATAL: Error whilst running psipred - script terminated!"
-    exit $status
+    exit $rc
 endif
 
 echo Pass2 ...
 
 $execdir/psipass2 $datadir/weights_p2.dat 1 1.0 1.0 $rootname.ss2 $rootname.ss > $rootname.horiz
+set rc = $status
 
-if ($status != 0) then
+if ($rc != 0) then
     echo "FATAL: Error whilst running psipass2 - script terminated!"
-    exit $status
+    exit $rc
 endif
 
 # Remove temporary files
